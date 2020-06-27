@@ -48,6 +48,10 @@ def run_msg(user_id):
 
 @dp.message_handler(commands=['start'])
 async def cmd_start(message: types.Message):
+    global flags
+    user_id = message.from_user.id
+    flags[user_id] = False
+    
     await message.answer(text('Привет!\n', 'Это ', bold('KUDOFF Bot'), '\nС помощью этого бота Вы можете переносить '
                                                                        'стиль с одной фотографии на другую\n',
                               'Например, так:', sep=''),
@@ -62,10 +66,11 @@ async def cmd_start(message: types.Message):
 
 @dp.message_handler(lambda message: message.text in ['Изменить content-фото', 'Изменить style-фото'])
 async def cmd_cancel(message: types.Message):
-    global flag
+    global flags
+    user_id = message.from_user.id
 
     await message.answer(text='Отправьте нужное фото')
-    flag = not flag
+    flags[user_id] = not flags[user_id]
 
 
 @dp.message_handler(lambda message: message.text == 'Продолжить')
@@ -74,7 +79,7 @@ async def cmd_continue(message: types.Message):
                          parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.message_handler(lambda message: message.text == 'Низкое (2-3 секунды)')
+@dp.message_handler(lambda message: message.text == 'Низкое (5-7 секунд)')
 async def low_quality(message: types.Message):
     global quality
     quality = 250  # set low quality
@@ -105,7 +110,7 @@ async def high_quality(message: types.Message):
 @dp.message_handler(lambda message: message.text == 'Запустить алгоритм')
 async def choose_quality(message: types.Message):
     poll_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    poll_keyboard.add(types.KeyboardButton(text='Низкое (2-3 секунды)'))
+    poll_keyboard.add(types.KeyboardButton(text='Низкое (5-7 секунд)'))
     poll_keyboard.add(types.KeyboardButton(text='Высокое (15-30 секунд)'))
 
     await message.answer(text='Выберите качество будущего фото:', reply_markup=poll_keyboard)
@@ -113,18 +118,18 @@ async def choose_quality(message: types.Message):
 
 @dp.message_handler(content_types=types.ContentTypes.PHOTO)
 async def get_photos(message):
-    global flag
+    global flagы
     poll_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     user_id = message.from_user.id
 
-    if not flag:
+    if not flags[user_id]:
         await message.photo[-1].download('data/content_{}.jpg'.format(user_id))
         poll_keyboard.add(types.KeyboardButton(text='Продолжить'))
         poll_keyboard.add(types.KeyboardButton(text='Изменить content-фото'))
         await message.answer(text('Если вы выбрали правильное изображение - ', italic('продолжаем'),
                                   '\nИначе измените content-фото', sep=''),
                              parse_mode=ParseMode.MARKDOWN, reply_markup=poll_keyboard)
-        flag = True
+        flags[user_id] = True
     else:
         await message.photo[-1].download('data/style_{}.jpg'.format(user_id))
         poll_keyboard.add(types.KeyboardButton(text='Запустить алгоритм'))
@@ -132,7 +137,7 @@ async def get_photos(message):
         await message.answer(text('Если вы всё выбрали верно - ', italic('запускаем алгоритм'),
                                   '\nИначе измените style-фото', sep=''),
                              parse_mode=ParseMode.MARKDOWN, reply_markup=poll_keyboard)
-        flag = False
+        flags[user_id] = False
 
 
 if __name__ == '__main__':
