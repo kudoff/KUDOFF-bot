@@ -4,7 +4,6 @@ import logging
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.utils.markdown import text, bold, italic
 from aiogram.types import ParseMode
-from emoji import emojize
 
 from msg import *
 from config import API_TOKEN
