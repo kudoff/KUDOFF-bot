@@ -1,1 +1,1 @@
-# kudoff-bot
+# KUDOFF Bot (Style Transfer GAN)
